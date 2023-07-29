@@ -7,7 +7,6 @@ using Ical.Net.DataTypes;
 using Ical.Net.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Net.Http.Headers;
-using NodaTime;
 
 /*DateTime start = new(DateTime.Now.Year, 1, 1, 12 + 10, 0, 0);
 while (start.Year == DateTime.Now.Year) {
@@ -23,7 +22,6 @@ return;*/
 
 const string ICALENDAR_MIME_TYPE = "text/calendar;charset=UTF-8";
 Encoding     utf8                = new UTF8Encoding(false, true);
-DateTimeZone zone                = DateTimeZoneProviders.Tzdb["America/Los_Angeles"];
 
 WebApplicationBuilder webappBuilder = WebApplication.CreateBuilder(args);
 // webappBuilder.WebHost.ConfigureKestrel(options => options.AllowSynchronousIO             = true);
@@ -41,18 +39,18 @@ webapp.MapGet("/", async request => {
     request.Response.ContentType = ICALENDAR_MIME_TYPE;
     Calendar fullMoonCalendar = new() { Method = CalendarMethods.Publish };
 
-    LocalDate today = SystemClock.Instance.GetCurrentInstant().InZone(zone).Date;
-    LocalDate start = today.PlusYears(-1);
-    LocalDate end   = today.PlusYears(1);
+    DateTime today = DateTime.Today;
+    DateTime start = today.AddYears(-1);
+    DateTime end   = today.AddYears(1);
 
-    LocalDate currentDate = findNextFullMoon(start, false);
+    DateTime currentDate = findNextFullMoon(start, false);
     while (currentDate <= end) {
         fullMoonCalendar.Events.Add(new CalendarEvent {
-            Uid      = $"{currentDate.ToDateTimeUnspecified():yyyyMMdd}",
-            Start    = currentDate.AtStartOfDayInZone(zone).ToIDateTime(),
+            Uid      = $"{currentDate:yyyyMMdd}",
+            Start    = currentDate.ToIDateTime(),
             IsAllDay = true,
             Summary  = "🌕 Full Moon",
-            Alarms   = { new Alarm { Action = AlarmAction.Display, Trigger = new Trigger(TimeSpan.FromHours(0)) } }
+            Alarms   = { new Alarm { Action = AlarmAction.Display, Trigger = new Trigger(TimeSpan.FromHours(2)) } }
         });
         currentDate = findNextFullMoon(currentDate, true);
     }
@@ -60,19 +58,19 @@ webapp.MapGet("/", async request => {
     await new CalendarSerializer().SerializeAsync(fullMoonCalendar, request.Response.Body, utf8);
 });
 
-static LocalDate findNextFullMoon(LocalDate current, bool excludeStart) {
-    if (excludeStart && isFullMoon(current)) {
+static DateTime findNextFullMoon(DateTime start, bool excludeStart) {
+    if (excludeStart && isFullMoon(start)) {
         // seek to roughly the next new moon so we'll get a different full moon below
-        current = current.PlusDays(22);
+        start = start.AddDays(22);
     }
 
-    while (!isFullMoon(current)) {
-        current = current.PlusDays(1);
+    while (!isFullMoon(start)) {
+        start = start.AddDays(1);
     }
 
-    return current;
+    return start;
 }
 
-static bool isFullMoon(LocalDate date) => date.ToDateTimeUnspecified().GetMoonAge() is >= 14.155 and < 16.61096;
+static bool isFullMoon(DateTime date) => date.GetMoonAge() is >= 14.155 and < 16.61096;
 
 webapp.Run();

@@ -12,6 +12,8 @@ public static class Extensions {
 
     public static IDateTime ToIDateTime(this DateTimeOffset dateTimeOffset) => new CalDateTime(dateTimeOffset.DateTime, dateTimeOffset.ToZonedDateTime().Zone.Id);
 
+    public static IDateTime ToIDateTime(this DateTime dateTime) => new CalDateTime(dateTime);
+
     public static IDateTime ToIDateTime(this ZonedDateTime zonedDateTime) => new CalDateTime(zonedDateTime.ToDateTimeUnspecified(), zonedDateTime.Zone.Id);
 
     public static async Task SerializeAsync(this SerializerBase serializerBase, object obj, Stream stream, Encoding encoding) {
