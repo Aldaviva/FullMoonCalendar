@@ -5,11 +5,26 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RollForward>major</RollForward>
+        <LangVersion>latest</LangVersion>
+        <Version>1.1.0</Version>
+        <Authors>Ben Hutchison</Authors>
+        <Copyright>© 2023 $(Authors)</Copyright>
+        <Company>$(Authors)</Company>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <ApplicationIcon>icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
+        <Content Include="icon.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AngleSharp" Version="1.0.4" />
         <PackageReference Include="BenMakesGames.MoonMath" Version="1.0.0" />
         <PackageReference Include="Ical.Net" Version="4.2.0" />
+        <PackageReference Include="jaytwo.FluentUri" Version="0.1.4" />
     </ItemGroup>
 
 </Project>

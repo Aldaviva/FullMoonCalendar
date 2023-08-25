@@ -16,6 +16,13 @@ public static class Extensions {
 
     public static IDateTime ToIDateTime(this ZonedDateTime zonedDateTime) => new CalDateTime(zonedDateTime.ToDateTimeUnspecified(), zonedDateTime.Zone.Id);
 
+    /// <summary>
+    /// Without this, you would have to manually configure your web server (Kestrel and IIS) to allow synchronous writes:
+    /// <code>
+    /// webappBuilder.WebHost.ConfigureKestrel(options =&gt; options.AllowSynchronousIO = true);
+    /// webappBuilder.Services.Configure&lt;IISServerOptions&gt;(options =&gt; options.AllowSynchronousIO = true);
+    /// </code>
+    /// </summary>
     public static async Task SerializeAsync(this SerializerBase serializerBase, object obj, Stream stream, Encoding encoding) {
         await using StreamWriter streamWriter = new(stream, encoding, 1024, true);
 

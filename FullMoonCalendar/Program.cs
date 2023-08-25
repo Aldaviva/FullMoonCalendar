@@ -1,76 +1,58 @@
 ﻿using System.Text;
-using BenMakesGames.MoonMath;
+using AngleSharp;
+using AngleSharp.Io;
 using FullMoonCalendar;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
-using Ical.Net.DataTypes;
 using Ical.Net.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Net.Http.Headers;
+using HeaderNames = Microsoft.Net.Http.Headers.HeaderNames;
 
-/*DateTime start = new(DateTime.Now.Year, 1, 1, 12 + 10, 0, 0);
-while (start.Year == DateTime.Now.Year) {
-    if (start.GetMoonAge() >= 14.155) {
-        Console.WriteLine(start.ToString());
-        start = start.AddDays(22);
-    } else {
-        start = start.AddDays(1);
-    }
-}
-
-return;*/
-
-const string ICALENDAR_MIME_TYPE = "text/calendar;charset=UTF-8";
-Encoding     utf8                = new UTF8Encoding(false, true);
+const string ICALENDAR_MIME_TYPE    = "text/calendar;charset=UTF-8";
+const int    CACHE_DURATION_MINUTES = 24 * 60;
+const string USER_AGENT_STRING      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+Encoding     utf8                   = new UTF8Encoding(false, true);
 
 WebApplicationBuilder webappBuilder = WebApplication.CreateBuilder(args);
-// webappBuilder.WebHost.ConfigureKestrel(options => options.AllowSynchronousIO             = true);
-// webappBuilder.Services.Configure<IISServerOptions>(options => options.AllowSynchronousIO = true);
+webappBuilder.Services
+    .AddOutputCache()
+    .AddResponseCaching()
+    .AddSingleton<FullMoonService, TimeAndDateWebScrapingFullMoonService>()
+    .AddSingleton(_ => BrowsingContext.New(Configuration.Default.With(new DefaultHttpRequester(USER_AGENT_STRING)).WithDefaultLoader()));
+
 WebApplication webapp = webappBuilder.Build();
 
 webapp.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto })
+    .UseOutputCache()
+    .UseResponseCaching()
     .Use(async (context, next) => {
-        context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue { Public = true, MaxAge = TimeSpan.FromDays(15) };
+        context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue { Public = true, MaxAge = TimeSpan.FromMinutes(CACHE_DURATION_MINUTES) };
         context.Response.Headers[HeaderNames.Vary]      = new[] { "Accept-Encoding" };
         await next();
     });
 
-webapp.MapGet("/", async request => {
+webapp.MapGet("/", [OutputCache(Duration = CACHE_DURATION_MINUTES * 60)] async (request) => {
+    FullMoonService fullMoonService  = request.RequestServices.GetRequiredService<FullMoonService>();
+    Calendar        fullMoonCalendar = new() { Method = CalendarMethods.Publish };
     request.Response.ContentType = ICALENDAR_MIME_TYPE;
-    Calendar fullMoonCalendar = new() { Method = CalendarMethods.Publish };
 
     DateTime today = DateTime.Today;
     DateTime start = today.AddYears(-1);
     DateTime end   = today.AddYears(1);
 
-    DateTime currentDate = findNextFullMoon(start, false);
-    while (currentDate <= end) {
+    await foreach (DateTime fullMoon in fullMoonService.getFullMoons(start, end)) {
         fullMoonCalendar.Events.Add(new CalendarEvent {
-            Uid      = $"{currentDate:yyyyMMdd}",
-            Start    = currentDate.ToIDateTime(),
+            Uid      = $"{fullMoon:yyyyMMdd}",
+            Start    = fullMoon.ToIDateTime(),
             IsAllDay = true,
             Summary  = "🌕 Full Moon",
-            Alarms   = { new Alarm { Action = AlarmAction.Display, Trigger = new Trigger(TimeSpan.FromHours(2)) } }
+            // Alarms   = { new Alarm { Action = AlarmAction.Display, Trigger = new Trigger(TimeSpan.FromHours(2)) } }
         });
-        currentDate = findNextFullMoon(currentDate, true);
     }
 
     await new CalendarSerializer().SerializeAsync(fullMoonCalendar, request.Response.Body, utf8);
 });
-
-static DateTime findNextFullMoon(DateTime start, bool excludeStart) {
-    if (excludeStart && isFullMoon(start)) {
-        // seek to roughly the next new moon so we'll get a different full moon below
-        start = start.AddDays(22);
-    }
-
-    while (!isFullMoon(start)) {
-        start = start.AddDays(1);
-    }
-
-    return start;
-}
-
-static bool isFullMoon(DateTime date) => date.GetMoonAge() is >= 14.155 and < 16.61096;
 
 webapp.Run();
