@@ -11,11 +11,11 @@
           "System.Text.Encoding.CodePages": "7.0.0"
         }
       },
-      "BenMakesGames.MoonMath": {
+      "Bom.Squad": {
         "type": "Direct",
-        "requested": "[1.0.0, )",
-        "resolved": "1.0.0",
-        "contentHash": "ewZL20iKcHohCoktN8YXMHN9oaAYW60NYuwPmSWzwEwWGpuzIE6B8sBTMiRboD4BEJSwzkDmk/cIm0tlP9+Bbg=="
+        "requested": "[0.1.0, )",
+        "resolved": "0.1.0",
+        "contentHash": "Yqds6XUaUBkDLK4aiddl0IjfwkPQD1+570NfuLPgkin5u0p3lfJMr2HRfebvONQKptOJYrr79j99T+bLwa1Ttg=="
       },
       "Ical.Net": {
         "type": "Direct",

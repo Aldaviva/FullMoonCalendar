@@ -1,6 +1,6 @@
-﻿using System.Text;
-using AngleSharp;
+﻿using AngleSharp;
 using AngleSharp.Io;
+using Bom.Squad;
 using FullMoonCalendar;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
@@ -8,12 +8,14 @@ using Ical.Net.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Net.Http.Headers;
+using System.Text;
 using HeaderNames = Microsoft.Net.Http.Headers.HeaderNames;
 
 const string ICALENDAR_MIME_TYPE    = "text/calendar;charset=UTF-8";
 const int    CACHE_DURATION_MINUTES = 24 * 60;
 const string USER_AGENT_STRING      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
-Encoding     utf8                   = new UTF8Encoding(false, true);
+
+BomSquad.DefuseUtf8Bom();
 
 WebApplicationBuilder webappBuilder = WebApplication.CreateBuilder(args);
 webappBuilder.Services
@@ -48,11 +50,10 @@ webapp.MapGet("/", [OutputCache(Duration = CACHE_DURATION_MINUTES * 60)] async (
             Start    = fullMoon.ToIDateTime(),
             IsAllDay = true,
             Summary  = "🌕 Full Moon",
-            // Alarms   = { new Alarm { Action = AlarmAction.Display, Trigger = new Trigger(TimeSpan.FromHours(2)) } }
         });
     }
 
-    await new CalendarSerializer().SerializeAsync(fullMoonCalendar, request.Response.Body, utf8);
+    await new CalendarSerializer().SerializeAsync(fullMoonCalendar, request.Response.Body, Encoding.UTF8);
 });
 
 webapp.Run();

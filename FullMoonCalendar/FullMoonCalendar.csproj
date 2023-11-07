@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <RollForward>major</RollForward>
         <LangVersion>latest</LangVersion>
-        <Version>1.1.0</Version>
+        <Version>1.1.1</Version>
         <Authors>Ben Hutchison</Authors>
         <Copyright>© 2023 $(Authors)</Copyright>
         <Company>$(Authors)</Company>
@@ -22,7 +22,7 @@
 
     <ItemGroup>
         <PackageReference Include="AngleSharp" Version="1.0.4" />
-        <PackageReference Include="BenMakesGames.MoonMath" Version="1.0.0" />
+        <PackageReference Include="Bom.Squad" Version="0.1.0" />
         <PackageReference Include="Ical.Net" Version="4.2.0" />
         <PackageReference Include="jaytwo.FluentUri" Version="0.1.4" />
     </ItemGroup>
