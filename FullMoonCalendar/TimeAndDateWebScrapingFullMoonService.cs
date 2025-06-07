@@ -1,25 +1,17 @@
-﻿using System.Globalization;
 using AngleSharp;
 using AngleSharp.Dom;
-using jaytwo.FluentUri;
+using System.Globalization;
+using Unfucked;
 
 namespace FullMoonCalendar;
 
-public class TimeAndDateWebScrapingFullMoonService: FullMoonService {
+public class TimeAndDateWebScrapingFullMoonService(IBrowsingContext browser, ILogger<TimeAndDateWebScrapingFullMoonService> logger): FullMoonService {
 
-    // ExceptionAdjustment: M:System.Uri.#ctor(System.String) -T:System.UriFormatException
-    private static readonly Uri         BASE_URI     = new("https://www.timeanddate.com/moon/phases/usa/san-jose");
-    private static readonly CultureInfo CULTURE_INFO = new("en-US");
-
-    private readonly IBrowsingContext browser;
-
-    public TimeAndDateWebScrapingFullMoonService(IBrowsingContext browser) {
-        this.browser = browser;
-    }
+    private static readonly UrlBuilder BASE_URI = new("https://www.timeanddate.com/moon/phases/usa/san-jose?year={year}");
 
     public async IAsyncEnumerable<DateTime> getFullMoons(DateTime start, DateTime end) {
         foreach (int year in Enumerable.Range(start.Year, end.Year - start.Year + 1)) {
-            using IDocument yearPage = await browser.OpenAsync(Url.Convert(BASE_URI.WithQueryParameter("year", year)));
+            using IDocument yearPage = await browser.OpenAsync(Url.Convert(BASE_URI.ResolveTemplate("year", year)));
 
             foreach (IElement lunationRow in yearPage.QuerySelectorAll("table.tb-sm tbody tr")) {
                 string rawDate = lunationRow.Children[5].Text().Trim();
@@ -30,8 +22,9 @@ public class TimeAndDateWebScrapingFullMoonService: FullMoonService {
                 if (!string.IsNullOrEmpty(rawDate) && !string.IsNullOrEmpty(rawTime)) {
                     DateTime dateTime;
                     try {
-                        dateTime = DateTime.ParseExact($"{rawDate}, {year} {rawTime}", "MMM d, yyyy h:mm tt", CULTURE_INFO);
-                    } catch (FormatException) {
+                        dateTime = DateTime.ParseExact($"{rawDate}, {year} {rawTime}", "MMM d, yyyy h:mm tt", CultureInfo.InvariantCulture);
+                    } catch (FormatException e) {
+                        logger.LogWarning(e, "Failed to parse datetime from TimeAndDate.com");
                         continue;
                     }
 

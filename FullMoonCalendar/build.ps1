@@ -1,1 +1,0 @@
-dotnet publish --configuration Release -p:PublishSingleFile=false --no-self-contained
